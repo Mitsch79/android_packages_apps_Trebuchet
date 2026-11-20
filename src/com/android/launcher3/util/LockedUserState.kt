@@ -72,6 +72,11 @@ class LockedUserState(private val mContext: Context) : SafeCloseable {
         mUserUnlockedActions.add(action)
     }
 
+    /** Removes a previously queued action when its owner has been destroyed. */
+    fun removeOnUserUnlockedRunnable(action: Runnable) {
+        mUserUnlockedActions.remove(action)
+    }
+
     companion object {
         @VisibleForTesting
         @JvmField
