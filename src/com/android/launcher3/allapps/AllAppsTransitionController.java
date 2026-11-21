@@ -416,7 +416,8 @@ public class AllAppsTransitionController
         mAppsView.setScrimView(scrimView);
 
         mAppsViewAlpha = new MultiValueAlpha(mAppsView, APPS_VIEW_INDEX_COUNT,
-                FeatureFlags.ALL_APPS_GONE_VISIBILITY.get() ? View.GONE : View.INVISIBLE);
+                mLauncher.getDeviceProfile().useGoneVisibilityForAllApps()
+                        ? View.GONE : View.INVISIBLE);
         mAppsViewAlpha.setUpdateVisibility(true);
         mAppsViewTranslationY = new MultiPropertyFactory<>(
                 mAppsView, VIEW_TRANSLATE_Y, APPS_VIEW_INDEX_COUNT, Float::sum);

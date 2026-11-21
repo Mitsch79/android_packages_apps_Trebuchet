@@ -80,6 +80,10 @@ public class AllAppsState extends LauncherState {
 
     @Override
     public ScaleAndTranslation getWorkspaceScaleAndTranslation(Launcher launcher) {
+        // Leave the workspace at rest while the tablet's app sheet tracks the finger.
+        if (launcher.getDeviceProfile().isLowRamTablet) {
+            return super.getWorkspaceScaleAndTranslation(launcher);
+        }
         return new ScaleAndTranslation(launcher.getDeviceProfile().workspaceContentScale, NO_OFFSET,
                 NO_OFFSET);
     }
@@ -102,6 +106,9 @@ public class AllAppsState extends LauncherState {
     protected <DEVICE_PROFILE_CONTEXT extends Context & ActivityContext>
             float getDepthUnchecked(DEVICE_PROFILE_CONTEXT context) {
         if (context.getDeviceProfile().isTablet) {
+            if (context.getDeviceProfile().isLowRamTablet) {
+                return 0f;
+            }
             return context.getDeviceProfile().bottomSheetDepth;
         } else {
             // The scrim fades in at approximately 50% of the swipe gesture.

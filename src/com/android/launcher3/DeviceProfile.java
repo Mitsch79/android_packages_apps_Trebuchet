@@ -33,6 +33,7 @@ import static com.android.launcher3.testing.shared.ResourceUtils.pxFromDp;
 import static com.android.launcher3.testing.shared.ResourceUtils.roundPxValueFromFloat;
 
 import android.annotation.SuppressLint;
+import android.app.ActivityManager;
 import android.content.Context;
 import android.content.res.Configuration;
 import android.content.res.Resources;
@@ -99,6 +100,7 @@ public class DeviceProfile {
 
     // Device properties
     public final boolean isTablet;
+    public final boolean isLowRamTablet;
     public final boolean isPhone;
     public final boolean transposeLayoutWithOrientation;
     public final boolean isMultiDisplay;
@@ -348,6 +350,7 @@ public class DeviceProfile {
         // Determine device posture.
         mInfo = info;
         isTablet = info.isTablet(windowBounds);
+        isLowRamTablet = isTablet && context.getSystemService(ActivityManager.class).isLowRamDevice();
         isPhone = !isTablet;
         isTwoPanels = isTablet && isMultiDisplay;
         boolean isTaskBarEnabled = LineageSettings.System.getInt(context.getContentResolver(),
@@ -1954,6 +1957,11 @@ public class DeviceProfile {
 
     public static int calculateCellHeight(int height, int borderSpacing, int countY) {
         return (height - ((countY - 1) * borderSpacing)) / countY;
+    }
+
+    /** Keep the first icon page laid out behind HOME on low-RAM tablets. */
+    public boolean useGoneVisibilityForAllApps() {
+        return FeatureFlags.ALL_APPS_GONE_VISIBILITY.get() && !isLowRamTablet;
     }
 
     /**

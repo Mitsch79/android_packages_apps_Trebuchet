@@ -22,7 +22,6 @@ import androidx.recyclerview.widget.RecyclerView.RecycledViewPool
 import androidx.recyclerview.widget.RecyclerView.ViewHolder
 import com.android.launcher3.BubbleTextView
 import com.android.launcher3.allapps.BaseAllAppsAdapter
-import com.android.launcher3.config.FeatureFlags
 import com.android.launcher3.util.CancellableTask
 import com.android.launcher3.util.Executors.MAIN_EXECUTOR
 import com.android.launcher3.util.Executors.VIEW_PREINFLATION_EXECUTOR
@@ -103,7 +102,7 @@ class AllAppsRecyclerViewPool<T> : RecycledViewPool() {
      * app icons plus [EXTRA_ICONS_COUNT] is the magic minimal count of app icons to preinflate to
      * suffice fast scrolling.
      *
-     * Note that if [FeatureFlags.ALL_APPS_GONE_VISIBILITY] is enabled, we need to preinfate extra
+     * When the hidden container is GONE, we need to preinflate extra
      * app icons in size of one all apps pages, so that opening all apps don't need to inflate app
      * icons.
      */
@@ -111,8 +110,8 @@ class AllAppsRecyclerViewPool<T> : RecycledViewPool() {
         var targetPreinflateCount =
             PREINFLATE_ICONS_ROW_COUNT * context.deviceProfile.numShownAllAppsColumns +
                 EXTRA_ICONS_COUNT
-        if (FeatureFlags.ALL_APPS_GONE_VISIBILITY.get()) {
-            val grid = ActivityContext.lookupContext<T>(context).deviceProfile
+        val grid = context.deviceProfile
+        if (grid.useGoneVisibilityForAllApps()) {
             targetPreinflateCount += grid.maxAllAppsRowCount * grid.numShownAllAppsColumns
         }
         if (hasWorkProfile) {

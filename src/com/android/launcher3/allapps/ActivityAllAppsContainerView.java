@@ -20,7 +20,6 @@ import static com.android.launcher3.allapps.ActivityAllAppsContainerView.Adapter
 import static com.android.launcher3.allapps.ActivityAllAppsContainerView.AdapterHolder.SEARCH;
 import static com.android.launcher3.allapps.BaseAllAppsAdapter.VIEW_TYPE_WORK_DISABLED_CARD;
 import static com.android.launcher3.allapps.BaseAllAppsAdapter.VIEW_TYPE_WORK_EDU_CARD;
-import static com.android.launcher3.config.FeatureFlags.ALL_APPS_GONE_VISIBILITY;
 import static com.android.launcher3.config.FeatureFlags.ENABLE_ALL_APPS_RV_PREINFLATION;
 import static com.android.launcher3.logging.StatsLogManager.LauncherEvent.LAUNCHER_ALLAPPS_COUNT;
 import static com.android.launcher3.logging.StatsLogManager.LauncherEvent.LAUNCHER_ALLAPPS_TAP_ON_PERSONAL_TAB;
@@ -666,9 +665,7 @@ public class ActivityAllAppsContainerView<T extends Context & ActivityContext>
      * If {@link ENABLE_ALL_APPS_RV_PREINFLATION} is enabled, wire custom
      * {@link RecyclerView.RecycledViewPool} to main and work {@link AllAppsRecyclerView}.
      *
-     * Then if {@link ALL_APPS_GONE_VISIBILITY} is enabled, update max pool size. This is because
-     * all apps rv's hidden visibility is changed to {@link View#GONE} from {@link View#INVISIBLE),
-     * thus we cannot rely on layout pass to update pool size.
+     * A GONE container skips layout, so initialize its pool size explicitly.
      */
     private static void setUpCustomRecyclerViewPool(
             @NonNull AllAppsRecyclerView mainRecyclerView,
@@ -683,7 +680,8 @@ public class ActivityAllAppsContainerView<T extends Context & ActivityContext>
         if (workRecyclerView != null) {
             workRecyclerView.setRecycledViewPool(recycledViewPool);
         }
-        if (ALL_APPS_GONE_VISIBILITY.get()) {
+        if (ActivityContext.lookupContext(mainRecyclerView.getContext()).getDeviceProfile()
+                .useGoneVisibilityForAllApps()) {
             mainRecyclerView.updatePoolSize(hasWorkProfile);
         }
     }
@@ -1356,6 +1354,11 @@ public class ActivityAllAppsContainerView<T extends Context & ActivityContext>
     public void addSpringFromFlingUpdateListener(ValueAnimator animator,
             float velocity /* release velocity */,
             float progress /* portion of the distance to travel*/) {
+        // Stretching the entire sheet needs an offscreen layer even when the
+        // icons are stationary. Let the slide animator finish on low-RAM tablets.
+        if (mActivityContext.getDeviceProfile().isLowRamTablet) {
+            return;
+        }
         animator.addListener(new AnimatorListenerAdapter() {
             @Override
             public void onAnimationStart(Animator animator) {
@@ -1371,6 +1374,9 @@ public class ActivityAllAppsContainerView<T extends Context & ActivityContext>
 
     /** Invoked when the container is pulled. */
     public void onPull(float deltaDistance, float displacement) {
+        if (mActivityContext.getDeviceProfile().isLowRamTablet) {
+            return;
+        }
         absorbPullDeltaDistance(PULL_MULTIPLIER * deltaDistance, PULL_MULTIPLIER * displacement);
         // Current motion spec is to actually push and not pull
         // on this surface. However, until EdgeEffect.onPush (b/190612804) is
